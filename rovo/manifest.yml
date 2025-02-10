@@ -35,4 +35,4 @@ modules:
 app:
   runtime:
     name: nodejs22.x
-  id: ari:cloud:ecosystem::app/12768280-bde0-4a9d-8d50-591367c00f4b
+  id: ari:cloud:ecosystem::app/daf3b40a-d4e8-49c5-9a96-e1fce45c2da7
