@@ -14,3 +14,9 @@ num run build # in static/hello-world
 forge tunnel # in base directory, see change immediately (to save changes need to re-deploy)
 forge deploy
 ```
+## Running code (for testing)
+```
+npm install
+npm install express cors
+node index.js
+```
