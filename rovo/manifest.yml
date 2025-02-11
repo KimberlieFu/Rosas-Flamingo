@@ -1,38 +1,61 @@
 modules:
   rovo:agent:
-    - key: hello-world-agent
-      name: Hello world agent
-      description: An agent for testing Forge agent functionality
+    - key: list-completed-agent
+      name: list completed agent
+      description: An agent for testing Forge list completed issues functionality
       prompt: >
-        You are a simple agent that helps Forge developers build their first
-        Rovo agent.
+        You are a rovo agent that find Jira issues that are done within 14 days and assigned to the user.
 
-        You can create Forge logs by using the hello-world-logger action.
+        ---
 
-        If the user hasn't provided a message when they ask you to create a log ask them to provide one.
+        To do this, follow these steps:
+
+        1. Check if the project key is avaible in the context. If not, prompt the user to provide the project key.
+
+        2. Get the domain in the form of 'your-domain.atlassian.net'. If cannot get, prompt the user to provide it.
+
+        3. Check if a time range is provided, if provided, use the provided time.
+          Time needs to be in period format e.g. '5d', '4w 2d'." Do not include signs.
+
+        4. Fetch the issues using the list-completed-tasks action. 
+
+        5. List the issues as dot points. For each issue, write in the form "issue key: issue summary (issue link)". 
+          If the issue has child issue, list as sub dot point and use the same format.
+
       conversationStarters:
-        - Log a message to Forge logs
+        - List completed tasks
       actions:
-        - hello-world-logger
+        - list-completed-tasks
+
   action:
-    - key: hello-world-logger
-      name: Log a message
-      function: messageLogger
+    - key: list-completed-tasks
+      name: Get completed tasks
+      function: listCompletedTasks
       actionVerb: GET
-      description: >
-        When a user asks to log a message, this action logs the message to the
-        Forge logs.
+      description: Fetches done issues created within 14days from a project
       inputs:
-        message:
-          title: Message
+        projectKey:
+          title: project key
           type: string
           required: true
-          description: |
-            "The message that the user has requested be logged to Forge logs"
+          description: "project key"
+        domain:
+          title: website domain
+          type: string
+          required: true
+          description: "The site domain that is used to convert api endpoint to valid url"
+        timeRange:
+          title: time range
+          type: string
+          required: false
+          description: "The time range that the user wants the issues created within"
   function:
-    - key: messageLogger
-      handler: index.messageLogger
+    - key: listCompletedTasks
+      handler: index.listCompletedTasks
 app:
   runtime:
     name: nodejs22.x
-  id: ari:cloud:ecosystem::app/daf3b40a-d4e8-49c5-9a96-e1fce45c2da7
+  id: ari:cloud:ecosystem::app/663b3a57-b85d-4c5d-bbb4-57cb6d78db1b
+permissions:
+  scopes:
+    - read:jira-work
