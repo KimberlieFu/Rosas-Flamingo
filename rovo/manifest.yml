@@ -1,14 +1,14 @@
 modules:
   rovo:agent:
-    - key: team-management-agent
-      name: "Standup Prep Agent"
+    - key: tester-agent
+      name: "Alternate Standup Prep Agent"
       description: >
-        An intelligent assistant dedicated to managing Jira tickets and
-        supporting efficient team workflows.
+        An intelligent assistant dedicated to prepare standup meeting notes
+        by  managing Jira tickets and supporting efficient team workflows.
       icon: resource:static-resources;Methexis.png
       prompt: |
         --- Overview ---
-        You are a team management assistant for an engineering manager and an experienced agent specializing 
+        You are a standup preparation assistant for an engineering team and an experienced agent specializing 
         in analyzing Jira issues that are assigned to the user.
 
         Your primary role is to help optimize team productivity by identifying duplicate tickets,
@@ -38,7 +38,7 @@ modules:
           3. If no stale issues are found, inform the user that there are no stale issues for the project.
           4. Otherwise, display a table with columns: Issue Key, Title, and Last Status Change Date.
 
-        
+
         --- Completed Tasks Detection ---
         When a user asks you to list completed tasks, perform the following steps:
           1. Check if the project key is available in the context; if not, prompt the user to provide it.
@@ -89,6 +89,30 @@ modules:
           4. **Return:**
              - Provide a concise and clear summary of the user's Jira tickets.
 
+        -- Generate meeting note --
+        This is the most important action. When a user requests to generate a comprehensive meeting 
+        note for today's standup meeting, follow these steps:
+
+          1. **My tickets**
+            This part is the main part of the meeting notes, giving a overview of Jira tickets for the user.
+            - First section is listing "Completed Ticekts", your job is the same as "Completed Tasks Detection"
+            - Second section is listing "Tickets in progress", your job is the same as "Data Analysis" step
+              specified in the Job: Analyze Assigned Jira Issues.
+            - Third section is listing "All Tickets assigned to me", 
+              use the `fetch-user-tickets` action to retrieve all tickets assigned to the user regardless of status.
+          
+          2. **Watchlist**
+            This part is the additional part of the meeting notes, warning the user of some tickets that 
+            may require attention. You should start this part with a alert icon and a suggestion like 
+            "These issues may require a separate meeting." 
+            - First section is "Tasks approaching Deadline", your job is the same as "Task Prioritization"
+            - Second section is "Duplicate Issues", your job is the same as "Duplicate Ticket Detection"
+            - Third section is "Stale Issues", your job is the same as "Stale Issue Detection"
+
+          Note that you should generate this meeting note to be as concise as possible.
+          In particular, it should mostly provide listing of Issues found based on specific criteria, 
+          do not give issues details unless explicitly asked.
+
         --- Additional Guidance ---
         - Provide a brief summary of the main findings.
         - Show the data in tabular format wherever possible, with columns: 'Category', 'Count', 'Percentage of Total'.
@@ -106,6 +130,7 @@ modules:
         - "Show available tasks"
         - "Analyze Jira Issues in this project"
         - "List my tasks sorted by due date"
+        - "Generate today's meeting notes"
 
       actions:
         - check-duplicates
@@ -116,39 +141,39 @@ modules:
         - fetch-user-tickets
         - display-tasks
 
-
-
-
   action:
     - key: check-duplicates
       name: "Check Duplicate Tickets"
       function: check-duplicates-fn
       actionVerb: GET
       description: >
-        This action retrieves recent Jira tickets from a specified project and compares their summaries
-        to identify tickets that are likely duplicates.
+        This action retrieves recent Jira tickets from a specified project and
+        compares their summaries to identify tickets that are likely duplicates.
         It returns a structured table with the results.
       inputs:
         projectKey:
           title: "Project Key"
           type: string
           required: true
-          description: "The Jira project key from which to fetch tickets for duplicate checking."
+          description: "The Jira project key from which to fetch tickets for duplicate
+            checking."
 
     - key: get-task-priorities
       name: "Get Task Priorities"
       function: get-task-priorities-fn
       actionVerb: GET
       description: >
-        This action retrieves tasks assigned to a user with "To Do" or "Done" statuses, sorts them by due date,
-        and calculates remaining time until due. Results are displayed in a Markdown table with priority and labels,
+        This action retrieves tasks assigned to a user with "To Do" or "Done"
+        statuses, sorts them by due date, and calculates remaining time until
+        due. Results are displayed in a Markdown table with priority and labels,
         highlighting any overdue tasks.
       inputs:
         assignee:
           title: "Assignee"
           type: string
           required: true
-          description: "The Jira username (or partial name) whose tasks are to be displayed. Fuzzy matching will determine the correct account."
+          description: "The Jira username (or partial name) whose tasks are to be
+            displayed. Fuzzy matching will determine the correct account."
         projectKey:
           title: "Project Key"
           type: string
@@ -160,15 +185,16 @@ modules:
       function: get-stale-issues-fn
       actionVerb: GET
       description: >
-        This action fetches stale issues from a project (issues without status changes for more than 2 weeks)
-        and returns a Markdown table with columns for Issue Key, Title, and Last Status Change Date.
+        This action fetches stale issues from a project (issues without status
+        changes for more than 2 weeks) and returns a Markdown table with columns
+        for Issue Key, Title, and Last Status Change Date.
       inputs:
         projectKey:
           title: "Project Key"
           type: string
           required: true
           description: "The Jira project key from which to fetch stale issues."
-      
+
     - key: list-completed-tasks
       name: "Get Completed Tasks"
       function: listCompletedTasks
@@ -184,12 +210,14 @@ modules:
           title: "Website Domain"
           type: string
           required: true
-          description: "The site domain used to construct the API endpoint (e.g. your-domain.atlassian.net)."
+          description: "The site domain used to construct the API endpoint (e.g.
+            your-domain.atlassian.net)."
         timeRange:
           title: "Time Range"
           type: string
           required: false
-          description: "The time range within which the issues were created (e.g. '5d', '4w 2d')."
+          description: "The time range within which the issues were created (e.g. '5d',
+            '4w 2d')."
 
     - key: get-issues
       name: "Get Issues"
@@ -199,7 +227,8 @@ modules:
         message:
           title: "Message"
           type: string
-          description: "The message that the user has requested to display all in-progress issues."
+          description: "The message that the user has requested to display all in-progress
+            issues."
           required: true
         projectKey:
           title: "Project Key"
@@ -212,7 +241,7 @@ modules:
       name: "Fetch Tickets Assigned to Me"
       function: fetch-tickets
       description: "Fetches all tickets assigned to the specified user."
-      actionVerb: GET  
+      actionVerb: GET
       inputs:
         projectKey:
           title: "Project Key"
@@ -223,16 +252,15 @@ modules:
           title: "Website Domain"
           type: string
           required: true
-          description: "The site domain used to construct the API endpoint (e.g. your-domain.atlassian.net)."
+          description: "The site domain used to construct the API endpoint (e.g.
+            your-domain.atlassian.net)."
 
     - key: display-tasks
       name: "Show Available Tasks"
       function: displayTasks
       actionVerb: GET
-      description: "Displays a list of available tasks along with instructions on what details to provide."
-
-
-
+      description: "Displays a list of available tasks along with instructions on what
+        details to provide."
 
   function:
     - key: check-duplicates-fn
@@ -253,7 +281,7 @@ modules:
 app:
   runtime:
     name: nodejs22.x
-  id: ari:cloud:ecosystem::app/daf3b40a-d4e8-49c5-9a96-e1fce45c2da7
+  id: ari:cloud:ecosystem::app/51e61998-7cc8-477b-bdb0-6c17cdc56434
 
 permissions:
   scopes:
