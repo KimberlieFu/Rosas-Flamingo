@@ -21,7 +21,7 @@ This Forge app—**StandUpFlow**—is a Jira global page app designed to streaml
 
 ## Agent Details
 
-- **Agent Name:** Methexis: Standup Assistant  
+- **Agent Name:**Standup Prep Agent
 - **Description:** An intelligent Jira assistant dedicated to improving daily standup efficiency by tracking task progress, highlighting blockers, and providing a team-wide overview.  
 - **Platform:** Jira Global Page  
 - **App Installed at:** [standupflow.atlassian.net](https://standupflow.atlassian.net/wiki/home)  
