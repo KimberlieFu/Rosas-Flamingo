@@ -6,6 +6,6 @@
   "private": true,
   "license": "MIT",
   "devDependencies": {
-    "@forge/api": "^4.2.0"
+    "@forge/api": "^4.3.0"
   }
 }
