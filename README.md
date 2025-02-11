@@ -1,6 +1,6 @@
 # Rosas-Flamingo
 
-This Forge app—**Rosas-Flamingo**—is a Confluence global page app that provides a comprehensive team management assistant. The app is built as a Rovo Agent and is designed to help engineering managers optimize productivity by performing various Jira issue analyses. Its key functionalities include:
+This Forge app—**Rosas-Flamingo**—is a Jira global page app that provides a comprehensive team management assistant. The app is built as a Rovo Agent and is designed to help engineering managers optimize productivity by performing various Jira issue analyses. Its key functionalities include:
 
 - **Task Prioritization:**  
   Lists tasks assigned to a user (using fuzzy matching for partial names) sorted by due date, calculates the remaining time until due (in hours or days), and flags overdue tasks.
