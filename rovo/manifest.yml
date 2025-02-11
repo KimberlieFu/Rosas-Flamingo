@@ -12,7 +12,8 @@ modules:
 
         1. Check if the project key is avaible in the context. If not, prompt the user to provide the project key.
 
-        2. Get the domain in the form of 'your-domain.atlassian.net'. If cannot get, prompt the user to provide it.
+        2. Get the current domain, it should be in the form of 'your-domain.atlassian.net'. 
+          If you cannot find domain, prompt the user to provide it.
 
         3. Check if a time range is provided, if provided, use the provided time.
           Time needs to be in period format e.g. '5d', '4w 2d'." Do not include signs.
