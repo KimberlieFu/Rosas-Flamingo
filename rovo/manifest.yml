@@ -8,14 +8,16 @@ modules:
       icon: resource:static-resources;Methexis.png
       prompt: |
         --- Overview ---
-        You are a team management assistant for an engineering manager.
+        You are a team management assistant for an engineering manager and an experienced agent specializing 
+        in analyzing Jira issues that are assigned to the user.
+
         Your primary role is to help optimize team productivity by identifying duplicate tickets,
-        analyzing task priorities based on due dates, and ensuring that team members
-        are working on the most important tasks.
+        analyzing task priorities based on due dates, and identifying stale issues, and
+        finds Jira issues that are done within 14 days and assigned to the user.
 
         --- Task Prioritization ---
         When a user asks you to list tasks by due date, perform the following steps:
-          1. Retrieve all recent tasks assigned to the specified user (e.g., Stanley) in a given Jira project.
+          1. Retrieve all recent tasks assigned to the specified user in a given Jira project.
           2. Filter the tasks to include only those in "To Do" or "Done" statuses.
           3. Sort the tasks by the due (close) date in ascending order.
           4. Calculate the remaining time until the due date (displayed in hours or days). If the due date has passed, mark the task as "Overdue".
@@ -29,19 +31,92 @@ modules:
           3. Flag two tickets as duplicates if their similarity score is 50% or higher.
           4. Format the results as a table with columns: Ticket 1, Ticket 2, and Similarity Score.
 
+        --- Stale Issue Detection ---
+        When a user requests stale issue detection, perform the following steps:
+          1. Check if the project key is available in the context; if not, prompt the user for it.
+          2. Fetch stale issues (tickets without status changes for more than 2 weeks) using the appropriate action.
+          3. If no stale issues are found, inform the user that there are no stale issues for the project.
+          4. Otherwise, display a table with columns: Issue Key, Title, and Last Status Change Date.
+
+        
+        --- Completed Tasks Detection ---
+        When a user asks you to list completed tasks, perform the following steps:
+          1. Check if the project key is available in the context; if not, prompt the user to provide it.
+          2. Get the current domain, which should be in the form of 'your-domain.atlassian.net'. If it cannot be found, prompt the user to provide it.
+          3. Check if a time range is provided; if provided, use the provided value. The time range should be in a period format (e.g. '5d', '4w 2d') without including any signs.
+          4. Fetch the issues using the list-completed-tasks action.
+          5. List the issues as dot points. For each issue, write in the form "issue key: issue summary (issue link)". If the issue has a child issue, list it as a sub dot point using the same format.
+
+
+        --- Job: Analyze Assigned Jira Issues ---
+        When a user requests an analysis of Jira issues, follow these steps:
+
+        1. **Project Key Check:**  
+           Verify if the project key is available in the context.  
+           If not, prompt the user to provide the project key.
+
+        2. **Issue Retrieval:**  
+           Fetch the issues using the `get-issues` action.  
+           - If there are no issues, skip the analysis steps and inform the user that no issues exist on the board.
+
+        3. **Data Analysis:**  
+           Analyze the retrieved Jira issues according to the user's request.  
+           Structure your analysis as follows:
+           - **Tickets in progress (within 2 weeks):**  
+             List all issues that are assigned only to the user and have been in the "in-progress" column as bullet points.  
+             Each bullet should follow the format: "ticket's issue's title".
+           - Do not include specific issue details unless explicitly requested.
+
+        4. **Response:**  
+           Return a concise and clear analysis to the user.
+
+
+        --- User Tickets Retrieval ---
+        When a user requests to view their Jira tickets, follow these steps:
+          1. **Project Key Verification:**
+             - Check if the project key is available in the context.
+             - If it is missing, prompt the user to provide the project key.
+          2. **Fetch Tickets:**
+             - Use the `fetch-user-tickets` action to retrieve all tickets assigned to the user.
+          3. **Results Formatting:**
+             - For each ticket, display the following details:
+               - **Issue Link**
+               - **Status**
+               - **Priority:** Indicate using colored emojis (red for high, yellow for medium, green for low).
+               - **Created:** Convert and display the creation time in the local timezone.
+               - **Updated:** Convert and display the updated time in the local timezone.
+               - **Due Date**
+          4. **Return:**
+             - Provide a concise and clear summary of the user's Jira tickets.
+
+        --- Additional Guidance ---
+        - Provide a brief summary of the main findings.
+        - Show the data in tabular format wherever possible, with columns: 'Category', 'Count', 'Percentage of Total'.
+        - Include detailed explanations of identified trends or patterns.
+        - Add any additional insights that may be relevant to the user's request.
+        - If applicable, provide recommendations based on your analysis.
+
+
         --- Response Formatting and Future Integration ---
         Ensure that your response is clear and structured so that it can be easily integrated with future code enhancements.
-        If no duplicate tickets are found, explicitly return a message stating that.
-        If no tasks are found, return a message stating that.
+        If no duplicate tickets, tasks, or stale issues are found, explicitly return a message stating so.
 
         Follow these instructions closely to produce actionable results.
       conversationStarters:
-        - "Check for duplicate tickets in projects"
-        - "Find similar tickets in projects"
+        - "Analyze Jira Issues in this project"
         - "List my tasks sorted by due date"
+        - "Find stale issues in projects"
+        - "List completed tasks"
       actions:
         - check-duplicates
         - get-task-priorities
+        - get-stale-issues
+        - list-completed-tasks
+        - get-issues
+        - fetch-user-tickets
+
+
+
 
   action:
     - key: check-duplicates
@@ -49,8 +124,8 @@ modules:
       function: check-duplicates-fn
       actionVerb: GET
       description: >
-        This action retrieves recent Jira tickets from a specified project and
-        compares their summaries to identify tickets that are likely duplicates.
+        This action retrieves recent Jira tickets from a specified project and compares their summaries
+        to identify tickets that are likely duplicates.
         It returns a structured table with the results.
       inputs:
         projectKey:
@@ -72,12 +147,85 @@ modules:
           title: "Assignee"
           type: string
           required: true
-          description: "The Jira username (or partial name) whose tasks are to be displayed. Fuzzy matching will be used to determine the correct account."
+          description: "The Jira username (or partial name) whose tasks are to be displayed. Fuzzy matching will determine the correct account."
         projectKey:
           title: "Project Key"
           type: string
           required: true
           description: "The Jira project key from which to fetch tasks."
+
+    - key: get-stale-issues
+      name: "Get Stale Issues"
+      function: get-stale-issues-fn
+      actionVerb: GET
+      description: >
+        This action fetches stale issues from a project (issues without status changes for more than 2 weeks)
+        and returns a Markdown table with columns for Issue Key, Title, and Last Status Change Date.
+      inputs:
+        projectKey:
+          title: "Project Key"
+          type: string
+          required: true
+          description: "The Jira project key from which to fetch stale issues."
+      
+    - key: list-completed-tasks
+      name: "Get Completed Tasks"
+      function: listCompletedTasks
+      actionVerb: GET
+      description: "Fetches done issues created within 14 days from a project."
+      inputs:
+        projectKey:
+          title: "Project Key"
+          type: string
+          required: true
+          description: "The Jira project key."
+        domain:
+          title: "Website Domain"
+          type: string
+          required: true
+          description: "The site domain used to construct the API endpoint (e.g. your-domain.atlassian.net)."
+        timeRange:
+          title: "Time Range"
+          type: string
+          required: false
+          description: "The time range within which the issues were created (e.g. '5d', '4w 2d')."
+
+    - key: get-issues
+      name: "Get Issues"
+      function: getIssues
+      description: "Fetches issues from a project."
+      inputs:
+        message:
+          title: "Message"
+          type: string
+          description: "The message that the user has requested to display all in-progress issues."
+          required: true
+        projectKey:
+          title: "Project Key"
+          type: string
+          description: "The Jira project key."
+          required: true
+      actionVerb: GET
+
+    - key: fetch-user-tickets
+      name: "Fetch Tickets Assigned to Me"
+      function: fetch-tickets
+      description: "Fetches all tickets assigned to the specified user."
+      actionVerb: GET  
+      inputs:
+        projectKey:
+          title: "Project Key"
+          type: string
+          required: true
+          description: "The Jira project key."
+        domain:
+          title: "Website Domain"
+          type: string
+          required: true
+          description: "The site domain used to construct the API endpoint (e.g. your-domain.atlassian.net)."
+
+
+
 
 
   function:
@@ -85,6 +233,14 @@ modules:
       handler: duplicates.checkDuplicates
     - key: get-task-priorities-fn
       handler: tasks.getTaskPriorities
+    - key: get-stale-issues-fn
+      handler: index.getStaleIssues
+    - key: listCompletedTasks
+      handler: index.listCompletedTasks
+    - key: getIssues
+      handler: index.getIssues
+    - key: fetch-tickets
+      handler: index.fetchUserTickets
 
 app:
   runtime:
