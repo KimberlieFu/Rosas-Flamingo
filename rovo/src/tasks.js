@@ -13,9 +13,7 @@ import api, { route, storage } from '@forge/api';
  */
 export async function getTaskPriorities(payload) {
   let { assignee, projectKey } = payload;
-  
-  console.log(`DEBUG: Received assignee: ${assignee}, ProjectKey: ${projectKey}`);
-  
+    
   // Get matching assignees using fuzzy matching
   const matches = await getMatchingAssignees(projectKey, assignee);
   if (matches.length === 0) {
@@ -30,13 +28,10 @@ export async function getTaskPriorities(payload) {
   }
   
   // If exactly one match is found, use its accountId.
-  const selectedAssignee = matches[0];
-  console.log(`DEBUG: Selected Assignee: ${selectedAssignee.displayName} (Account ID: ${selectedAssignee.accountId})`);
-  
+  const selectedAssignee = matches[0];  
   // Build the JQL query using the exact accountId.
   // For Jira Cloud, using accountId is more reliable.
   const jql = `assignee = "${selectedAssignee.accountId}" AND project = ${projectKey} AND status in ("To Do", "Done") ORDER BY duedate ASC`;
-  console.log(`DEBUG: JQL Query: ${jql}`);
   
   const response = await api.asApp().requestJira(
     route`/rest/api/3/search?jql=${(jql)}&fields=summary,duedate,priority,status,timeoriginalestimate,labels`
@@ -108,7 +103,6 @@ export async function getTaskPriorities(payload) {
 async function getMatchingAssignees(projectKey, partialName) {
   // Build a JQL query to fetch issues for the project
   const jql = `project = ${projectKey} ORDER BY created DESC`;
-  console.log(`DEBUG: getMatchingAssignees JQL: ${jql}`);
   
   const response = await api.asApp().requestJira(
     route`/rest/api/3/search?jql=${(jql)}&fields=assignee`
@@ -138,7 +132,6 @@ async function getMatchingAssignees(projectKey, partialName) {
     }
   });
   
-  console.log(`DEBUG: Found ${matches.length} matching assignees.`);
   return matches;
 }
 

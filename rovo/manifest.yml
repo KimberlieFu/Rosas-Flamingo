@@ -1,7 +1,7 @@
 modules:
   rovo:agent:
     - key: team-management-agent
-      name: "Methexis: Team Assistant"
+      name: "Standup Prep Agent"
       description: >
         An intelligent assistant dedicated to managing Jira tickets and
         supporting efficient team workflows.
@@ -103,10 +103,10 @@ modules:
 
         Follow these instructions closely to produce actionable results.
       conversationStarters:
+        - "Show available tasks"
         - "Analyze Jira Issues in this project"
         - "List my tasks sorted by due date"
-        - "Find stale issues in projects"
-        - "List completed tasks"
+
       actions:
         - check-duplicates
         - get-task-priorities
@@ -114,6 +114,7 @@ modules:
         - list-completed-tasks
         - get-issues
         - fetch-user-tickets
+        - display-tasks
 
 
 
@@ -224,6 +225,11 @@ modules:
           required: true
           description: "The site domain used to construct the API endpoint (e.g. your-domain.atlassian.net)."
 
+    - key: display-tasks
+      name: "Show Available Tasks"
+      function: displayTasks
+      actionVerb: GET
+      description: "Displays a list of available tasks along with instructions on what details to provide."
 
 
 
@@ -241,6 +247,8 @@ modules:
       handler: index.getIssues
     - key: fetch-tickets
       handler: index.fetchUserTickets
+    - key: displayTasks
+      handler: index.displayTasks
 
 app:
   runtime:
